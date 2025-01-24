@@ -1,0 +1,86 @@
+from machine import Pin, PWM
+import time
+
+# Motor Pins
+motorA_forward = Pin(0, Pin.OUT)  # D3
+motorA_backward = Pin(2, Pin.OUT)  # D4
+motorB_forward = Pin(14, Pin.OUT)  # D5
+motorB_backward = Pin(12, Pin.OUT)  # D6
+
+# Ultrasonic Sensor Pins
+trig = Pin(5, Pin.OUT)  # D1
+echo = Pin(4, Pin.IN)   # D2
+
+# Functions for motor control
+def move_forward():
+    motorA_forward.value(1)
+    motorA_backward.value(0)
+    motorB_forward.value(1)
+    motorB_backward.value(0)
+
+def move_backward():
+    motorA_forward.value(0)
+    motorA_backward.value(1)
+    motorB_forward.value(0)
+    motorB_backward.value(1)
+
+def turn_left():
+    motorA_forward.value(0)
+    motorA_backward.value(1)
+    motorB_forward.value(1)
+    motorB_backward.value(0)
+
+def turn_right():
+    motorA_forward.value(1)
+    motorA_backward.value(0)
+    motorB_forward.value(0)
+    motorB_backward.value(1)
+
+def stop():
+    motorA_forward.value(0)
+    motorA_backward.value(0)
+    motorB_forward.value(0)
+    motorB_backward.value(0)
+
+# Ultrasonic distance measurement
+def get_distance():
+    trig.value(0)
+    time.sleep_us(2)
+    trig.value(1)
+    time.sleep_us(10)
+    trig.value(0)
+
+    while echo.value() == 0:
+        pass
+    start_time = time.ticks_us()
+
+    while echo.value() == 1:
+        pass
+    end_time = time.ticks_us()
+
+    # Calculate distance in cm
+    duration = time.ticks_diff(end_time, start_time)
+    distance = (duration * 0.0343) / 2
+    return distance
+
+# Main loop
+try:
+    while True:
+        distance = get_distance()
+        print("Distance:", distance, "cm")
+
+        if distance < 20:  # If an obstacle is detected within 20 cm
+            stop()
+            time.sleep(0.5)
+            move_backward()
+            time.sleep(1)
+            turn_left()
+            time.sleep(1)
+        else:
+            move_forward()
+
+        time.sleep(0.1)
+
+except KeyboardInterrupt:
+    stop()
+    print("Bot stopped")
